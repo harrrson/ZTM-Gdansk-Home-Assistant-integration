@@ -96,6 +96,10 @@ ztm_gdansk:
       lines: []     # wykryj automatycznie
 ```
 
+> **Uwaga:** Auto-discovery wykrywa tylko linie, które akurat kursują w momencie startu
+> Home Assistant. Jeśli linia nie jeździ o danej porze (np. nocą, w weekendy),
+> nie zostanie wykryta. Dla pełnego pokrycia podaj linie jawnie w `lines:`.
+
 ---
 
 ## Encje
