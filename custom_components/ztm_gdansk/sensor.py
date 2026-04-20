@@ -47,7 +47,7 @@ class ZTMDepartureSensor(CoordinatorEntity[DepartureCoordinator], SensorEntity):
         *,
         stop_id: int,
         stop_name: str,
-        line: str,
+        line: str | None,
         next_count: int,
         stale_max_age: int,
     ) -> None:
@@ -57,10 +57,14 @@ class ZTMDepartureSensor(CoordinatorEntity[DepartureCoordinator], SensorEntity):
         self._line = line
         self._next_count = next_count
         self._stale_max_age = stale_max_age
-        self._attr_unique_id = f"{DOMAIN}_{stop_id}_{line}"
-        self._attr_name = f"ZTM {stop_name} — linia {line}"
-        # Suggested entity_id (HA may rename if collision):
-        self.entity_id = f"sensor.ztm_{slugify_pl(stop_name)}_{slugify_pl(line)}"
+        if line:
+            self._attr_unique_id = f"{DOMAIN}_{stop_id}_{line}"
+            self._attr_name = f"ZTM {stop_name} — linia {line}"
+            self.entity_id = f"sensor.ztm_{slugify_pl(stop_name)}_{slugify_pl(line)}"
+        else:
+            self._attr_unique_id = f"{DOMAIN}_{stop_id}"
+            self._attr_name = f"ZTM {stop_name}"
+            self.entity_id = f"sensor.ztm_{slugify_pl(stop_name)}"
 
     def _matching_departures(self) -> list[dict[str, Any]]:
         if not self.coordinator.data:
@@ -69,8 +73,10 @@ class ZTMDepartureSensor(CoordinatorEntity[DepartureCoordinator], SensorEntity):
         if not stop_payload:
             return []
         deps = stop_payload.get("departures") or []
-        # Real API field is routeShortName; exposed HA attribute stays "line"
-        matching = [d for d in deps if str(d.get("routeShortName")) == self._line]
+        if self._line:
+            matching = [d for d in deps if str(d.get("routeShortName")) == self._line]
+        else:
+            matching = list(deps)
         matching.sort(key=lambda d: d.get("estimatedTime") or "")
         return matching
 
@@ -112,7 +118,7 @@ class ZTMDepartureSensor(CoordinatorEntity[DepartureCoordinator], SensorEntity):
             if est and theo:
                 delay_minutes = int((est - theo).total_seconds() // 60)
         return {
-            "line": self._line,
+            "line": self._line or (str(first.get("routeShortName")) if first else None),
             "stop_id": self._stop_id,
             "stop_name": self._stop_name,
             "direction": first.get("headsign") if first else None,
@@ -151,6 +157,16 @@ async def async_setup_platform(
 
     sensors: list[ZTMDepartureSensor] = []
     for entry in entries:
+        sensors.append(
+            ZTMDepartureSensor(
+                coordinator,
+                stop_id=entry["stop_id"],
+                stop_name=entry["stop_name"],
+                line=None,
+                next_count=next_count,
+                stale_max_age=stale_max_age,
+            )
+        )
         for line in entry["lines"]:
             sensors.append(
                 ZTMDepartureSensor(

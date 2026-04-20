@@ -96,3 +96,34 @@ def test_sensor_available_when_fresh():
         coord, stop_id=1234, stop_name="X", line="8", next_count=5, stale_max_age=600,
     )
     assert sensor.available is True
+
+
+def test_stop_sensor_unique_id_and_name():
+    coord = MagicMock()
+    coord.data = {1234: {"departures": []}}
+    coord.last_successful_update = datetime.now(timezone.utc)
+    sensor = ZTMDepartureSensor(
+        coord, stop_id=1234, stop_name="Brama Wyżynna",
+        line=None, next_count=5, stale_max_age=600,
+    )
+    assert sensor.unique_id == "ztm_gdansk_1234"
+    assert sensor.name == "ZTM Brama Wyżynna"
+    assert "linia" not in sensor.name
+
+
+def test_stop_sensor_returns_earliest_departure_across_lines():
+    deps = [
+        {"routeShortName": "11", "estimatedTime": "2026-04-19T22:36:00+02:00",
+         "theoreticalTime": "2026-04-19T22:36:00+02:00", "headsign": "Migowo"},
+        {"routeShortName": "8", "estimatedTime": "2026-04-19T22:35:00+02:00",
+         "theoreticalTime": "2026-04-19T22:34:00+02:00", "headsign": "Stogi"},
+    ]
+    coord = _make_coord(1234, deps)
+    sensor = ZTMDepartureSensor(
+        coord, stop_id=1234, stop_name="X", line=None, next_count=5, stale_max_age=600,
+    )
+    assert sensor.native_value.isoformat() == "2026-04-19T22:35:00+02:00"
+    attrs = sensor.extra_state_attributes
+    assert attrs["line"] == "8"
+    assert attrs["direction"] == "Stogi"
+    assert len(attrs["next_departures"]) == 2

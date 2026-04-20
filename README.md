@@ -106,8 +106,11 @@ nie kursują w danym momencie (np. nocne, weekendowe).
 
 ### Sensory odjazdów (`sensor.ztm_*`)
 
-Dla każdej kombinacji przystanek + linia powstaje sensor. Przykładowa nazwa:
-`sensor.ztm_brama_wyzynna_8`.
+Dla każdego przystanku powstają dwa rodzaje sensorów:
+
+- **Sensor przystanku** — `sensor.ztm_brama_wyzynna` — następny odjazd z przystanku
+  niezależnie od linii. Atrybut `line` pokazuje linię najbliższego odjazdu.
+- **Sensory per linia** — `sensor.ztm_brama_wyzynna_8` — następny odjazd konkretnej linii.
 
 Stan sensora: **timestamp** następnego odjazdu (ISO 8601).
 
