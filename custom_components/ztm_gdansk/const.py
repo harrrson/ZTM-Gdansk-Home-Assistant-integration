@@ -38,6 +38,7 @@ _CKAN_RESOURCE_BASE = "https://ckan.multimediagdansk.pl/dataset/c24aa637-3619-4d
 API_STOPS_URL = f"{_CKAN_RESOURCE_BASE}/d3e96eb6-25ad-4d6c-8651-b1eb39155945/download/stopsingdansk.json"
 API_DISPLAYS_URL = f"{_CKAN_RESOURCE_BASE}/ee910ad8-8ffa-4e24-8ef9-d5a335b07ccb/download/displays.json"
 API_ROUTES_URL = f"{_CKAN_RESOURCE_BASE}/22313c56-5acf-41c7-a5fd-dc5dc72b3851/download/routes.json"
+API_STOPS_IN_TRIP_URL = f"{_CKAN_RESOURCE_BASE}/3115d29d-b763-4af5-93f6-763b835967d6/download/stopsintrip.json"
 HTTP_TIMEOUT_SECONDS = 10
 
 # Backoff

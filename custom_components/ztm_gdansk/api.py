@@ -13,6 +13,7 @@ from .const import (
     API_DISPLAY_MESSAGES_URL,
     API_DISPLAYS_URL,
     API_ROUTES_URL,
+    API_STOPS_IN_TRIP_URL,
     API_STOPS_URL,
     API_ZNT_URL,
     HTTP_TIMEOUT_SECONDS,
@@ -53,9 +54,9 @@ class ZTMGdanskClient:
         self._session = session
         self._timeout = ClientTimeout(total=HTTP_TIMEOUT_SECONDS)
 
-    async def _get_json(self, url: str) -> Any:
+    async def _get_json(self, url: str, *, timeout: ClientTimeout | None = None) -> Any:
         try:
-            async with self._session.get(url, timeout=self._timeout) as resp:
+            async with self._session.get(url, timeout=timeout or self._timeout) as resp:
                 if resp.status >= 400:
                     body = (await resp.text())[:500]
                     raise ZTMApiError(
@@ -100,3 +101,10 @@ class ZTMGdanskClient:
     async def get_routes(self) -> Any:
         """Return route (line) definitions keyed by date."""
         return await self._get_json(API_ROUTES_URL)
+
+    async def get_stops_in_trip(self) -> Any:
+        """Return stop-in-trip mapping keyed by date (~37 MB)."""
+        return await self._get_json(
+            API_STOPS_IN_TRIP_URL,
+            timeout=ClientTimeout(total=60),
+        )

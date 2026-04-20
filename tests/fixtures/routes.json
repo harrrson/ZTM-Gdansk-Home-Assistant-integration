@@ -1,0 +1,7 @@
+{"2026-04-20": {"lastUpdate": "2026-04-20T00:00:00", "routes": [
+  {"routeId": 113, "agencyId": 1, "routeShortName": "113", "routeLongName": "Test 113", "activationDate": "2026-04-01", "routeType": "BUS"},
+  {"routeId": 176, "agencyId": 1, "routeShortName": "176", "routeLongName": "Test 176", "activationDate": "2026-04-01", "routeType": "BUS"},
+  {"routeId": 213, "agencyId": 1, "routeShortName": "213", "routeLongName": "Test 213", "activationDate": "2026-04-01", "routeType": "BUS"},
+  {"routeId": 414, "agencyId": 1, "routeShortName": "N14", "routeLongName": "Test N14", "activationDate": "2026-04-01", "routeType": "BUS"},
+  {"routeId": 8, "agencyId": 1, "routeShortName": "8", "routeLongName": "Test 8", "activationDate": "2026-04-01", "routeType": "TRAM"}
+]}}

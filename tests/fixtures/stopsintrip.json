@@ -1,0 +1,8 @@
+{"2026-04-20": {"lastUpdate": "2026-04-20T00:00:00", "stopsInTrip": [
+  {"routeId": 113, "tripId": 21, "stopId": 15026, "stopSequence": 1, "agencyId": 1, "topologyVersionId": 1, "passenger": true, "tripActivationDate": "2026-04-01", "stopActivationDate": "2026-04-01"},
+  {"routeId": 176, "tripId": 31, "stopId": 15026, "stopSequence": 5, "agencyId": 1, "topologyVersionId": 1, "passenger": true, "tripActivationDate": "2026-04-01", "stopActivationDate": "2026-04-01"},
+  {"routeId": 213, "tripId": 41, "stopId": 15026, "stopSequence": 3, "agencyId": 1, "topologyVersionId": 1, "passenger": true, "tripActivationDate": "2026-04-01", "stopActivationDate": "2026-04-01"},
+  {"routeId": 414, "tripId": 51, "stopId": 15026, "stopSequence": 2, "agencyId": 1, "topologyVersionId": 1, "passenger": true, "tripActivationDate": "2026-04-01", "stopActivationDate": "2026-04-01"},
+  {"routeId": 8, "tripId": 61, "stopId": 1234, "stopSequence": 7, "agencyId": 1, "topologyVersionId": 1, "passenger": true, "tripActivationDate": "2026-04-01", "stopActivationDate": "2026-04-01"},
+  {"routeId": 113, "tripId": 22, "stopId": 184, "stopSequence": 0, "agencyId": 1, "topologyVersionId": 1, "passenger": true, "tripActivationDate": "2026-04-01", "stopActivationDate": "2026-04-01"}
+]}}

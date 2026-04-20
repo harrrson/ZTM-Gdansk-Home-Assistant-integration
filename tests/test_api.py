@@ -13,6 +13,8 @@ from custom_components.ztm_gdansk.const import (
     API_DEPARTURES_URL,
     API_DISPLAY_MESSAGES_URL,
     API_DISPLAYS_URL,
+    API_ROUTES_URL,
+    API_STOPS_IN_TRIP_URL,
     API_STOPS_URL,
     API_ZNT_URL,
 )
@@ -96,3 +98,17 @@ async def test_get_displays(client, fixture_loader):
     with aioresponses() as m:
         m.get(API_DISPLAYS_URL, payload=payload)
         assert await client.get_displays() == payload
+
+
+async def test_get_routes(client, fixture_loader):
+    payload = fixture_loader("routes")
+    with aioresponses() as m:
+        m.get(API_ROUTES_URL, payload=payload)
+        assert await client.get_routes() == payload
+
+
+async def test_get_stops_in_trip(client, fixture_loader):
+    payload = fixture_loader("stopsintrip")
+    with aioresponses() as m:
+        m.get(API_STOPS_IN_TRIP_URL, payload=payload)
+        assert await client.get_stops_in_trip() == payload

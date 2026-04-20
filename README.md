@@ -87,7 +87,7 @@ ztm_gdansk:
 ### Auto-discovery linii
 
 Jeśli nie podasz `lines` (lub podasz pustą listę), integracja automatycznie wykryje
-wszystkie linie odjeżdżające z danego przystanku przy starcie:
+wszystkie linie obsługujące dany przystanek na podstawie statycznego rozkładu jazdy:
 
 ```yaml
 ztm_gdansk:
@@ -96,9 +96,9 @@ ztm_gdansk:
       lines: []     # wykryj automatycznie
 ```
 
-> **Uwaga:** Auto-discovery wykrywa tylko linie, które akurat kursują w momencie startu
-> Home Assistant. Jeśli linia nie jeździ o danej porze (np. nocą, w weekendy),
-> nie zostanie wykryta. Dla pełnego pokrycia podaj linie jawnie w `lines:`.
+Przy starcie integracja pobiera pełny rozkład (~37 MB, jednorazowo) i mapuje
+przystanki na linie. Dzięki temu wykrywane są wszystkie linie — również te, które
+nie kursują w danym momencie (np. nocne, weekendowe).
 
 ---
 
@@ -216,11 +216,12 @@ błędach API (podwajanie interwału po 3 kolejnych błędach, maks. 600 s dla o
 ### Auto-discovery nie wykrył linii
 
 ```
-WARNING: Nie udało się wykryć linii dla stop_id=... (brak danych z API w pierwszym pulli)
+WARNING: Nie udało się wykryć linii dla stop_id=... ze statycznego rozkładu — podaj `lines:` jawnie
 ```
 
-API nie zwróciło odjazdów w momencie startu (np. noc, poza kursowaniem). Podaj linie
-jawnie w `lines:` lub zrestartuj HA w godzinach kursowania.
+Integracja nie znalazła danego przystanku w danych rozkładu. Możliwe przyczyny:
+API rozkładu było niedostępne, lub `stop_id` nie występuje w żadnym rozkładzie.
+Podaj linie jawnie w `lines:`.
 
 ---
 

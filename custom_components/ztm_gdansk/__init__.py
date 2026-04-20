@@ -1,6 +1,7 @@
 """ZTM Gdańsk integration bootstrap."""
 from __future__ import annotations
 
+import asyncio
 import difflib
 import logging
 from datetime import timedelta
@@ -88,29 +89,25 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         )
         return False
 
+    # Resolve "all lines from stop" entries via schedule data (not live departures)
+    needs_discovery = [e for e in valid_entries if not e[CONF_LINES]]
+    if needs_discovery:
+        stop_lines_map = await _discover_lines_from_schedule(client)
+        for entry in needs_discovery:
+            sid = entry[CONF_STOP_ID]
+            entry[CONF_LINES] = sorted(stop_lines_map.get(sid, []))
+            if not entry[CONF_LINES]:
+                _LOGGER.warning(
+                    "Nie udało się wykryć linii dla stop_id=%s ze statycznego rozkładu — "
+                    "podaj `lines:` jawnie", sid,
+                )
+
     departure_coord = DepartureCoordinator(
         hass, client,
         stop_ids=[e[CONF_STOP_ID] for e in valid_entries],
         scan_interval=timedelta(seconds=domain_config[CONF_SCAN_INTERVAL]),
     )
     await departure_coord.async_refresh()
-
-    # Resolve "all lines from stop" entries after first refresh
-    for entry in valid_entries:
-        if not entry[CONF_LINES]:
-            payload = (departure_coord.data or {}).get(entry[CONF_STOP_ID]) or {}
-            lines_seen: set[str] = set()
-            for d in payload.get("departures") or []:
-                # ADDENDUM §B: real API field is routeShortName, not line
-                line = d.get("routeShortName")
-                if line is not None:
-                    lines_seen.add(str(line))
-            entry[CONF_LINES] = sorted(lines_seen)
-            if not entry[CONF_LINES]:
-                _LOGGER.warning(
-                    "Nie udało się wykryć linii dla stop_id=%s (brak danych z API w pierwszym pulli) — "
-                    "pomiń lub podaj `lines:` jawnie", entry[CONF_STOP_ID],
-                )
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN]["departure_coordinator"] = departure_coord
@@ -144,6 +141,50 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         )
 
     return True
+
+
+async def _discover_lines_from_schedule(client: ZTMGdanskClient) -> dict[int, set[str]]:
+    """Build {stopId: set(routeShortName)} from static schedule data.
+
+    Fetches stopsintrip.json (~37 MB) and routes.json once at startup.
+    Only called when at least one departure entry uses lines: [].
+    """
+    try:
+        raw_trips, raw_routes = await asyncio.gather(
+            client.get_stops_in_trip(),
+            client.get_routes(),
+        )
+    except ZTMApiError as err:
+        _LOGGER.warning(
+            "Nie udało się pobrać danych rozkładu do wykrywania linii (%s) — "
+            "auto-discovery niedostępne", err,
+        )
+        return {}
+
+    route_name_map: dict[int, str] = {}
+    if isinstance(raw_routes, dict):
+        for date_block in raw_routes.values():
+            if isinstance(date_block, dict):
+                for route in date_block.get("routes") or []:
+                    rid = route.get("routeId")
+                    name = route.get("routeShortName")
+                    if isinstance(rid, int) and isinstance(name, str):
+                        route_name_map[rid] = name
+                break
+
+    stop_lines: dict[int, set[str]] = {}
+    if isinstance(raw_trips, dict):
+        for date_block in raw_trips.values():
+            if isinstance(date_block, dict):
+                for item in date_block.get("stopsInTrip") or []:
+                    sid = item.get("stopId")
+                    rid = item.get("routeId")
+                    if isinstance(sid, int) and isinstance(rid, int):
+                        name = route_name_map.get(rid, str(rid))
+                        stop_lines.setdefault(sid, set()).add(name)
+                break
+
+    return stop_lines
 
 
 def _build_stop_index(raw: Any) -> dict[int, str]:
