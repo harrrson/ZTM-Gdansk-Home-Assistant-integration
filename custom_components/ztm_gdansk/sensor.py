@@ -54,7 +54,7 @@ class ZtmGdanskSensor(CoordinatorEntity[ZtmGdanskCoordinator], SensorEntity):
         self._entry = entry
 
         self._attr_unique_id = f"ztm_gdansk_{self._stop_id}"
-        self._attr_name = f"ZTM {self._stop_name} {self._stop_code}"
+        self._attr_name = f"ZTM Gdańsk {self._stop_name} {self._stop_code}"
 
     def _options(self) -> dict:
         return self._entry.options

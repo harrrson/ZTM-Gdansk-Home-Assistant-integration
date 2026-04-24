@@ -55,7 +55,9 @@ class ZtmGdanskCoordinator(DataUpdateCoordinator[list[dict]]):
                     GRACE_PERIOD,
                     err,
                 )
-                return self.data or []
+                if self.data is not None:
+                    return self.data
+                raise UpdateFailed(f"ZTM Gdańsk API unavailable (first fetch): {err}") from err
             raise UpdateFailed(f"ZTM Gdańsk API unavailable: {err}") from err
 
         self._consecutive_errors = 0

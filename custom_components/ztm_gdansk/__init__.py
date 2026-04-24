@@ -6,6 +6,7 @@ from pathlib import Path
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ZtmGdanskApiClient
@@ -27,7 +28,9 @@ _CARD_URL = f"/{DOMAIN}/ztm-gdansk-card.js"
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    hass.http.register_static_path(_CARD_URL, str(_WWW_DIR / "ztm-gdansk-card.js"))
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(_CARD_URL, str(_WWW_DIR / "ztm-gdansk-card.js"), cache_headers=False)]
+    )
     return True
 
 

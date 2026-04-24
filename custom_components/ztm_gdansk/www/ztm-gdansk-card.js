@@ -19,14 +19,6 @@ class ZtmGdanskCard extends LitElement {
     this._config = config;
   }
 
-  set hass(hass) {
-    this._hass = hass;
-  }
-
-  get hass() {
-    return this._hass;
-  }
-
   static getConfigElement() {
     return document.createElement("ztm-gdansk-card-editor");
   }
@@ -66,10 +58,10 @@ class ZtmGdanskCard extends LitElement {
   }
 
   render() {
-    if (!this._config || !this._hass) return html``;
+    if (!this._config || !this.hass) return html``;
 
     const entityId = this._config.entity;
-    const stateObj = this._hass.states[entityId];
+    const stateObj = this.hass.states[entityId];
 
     if (!stateObj) {
       return html`
