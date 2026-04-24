@@ -42,9 +42,9 @@ class ZtmGdanskApiClient:
         """Return list of stops with stopId, stopName, stopCode, stopDesc."""
         data = await self._get_json(URL_STOPS)
         try:
-            date_key = next(iter(data))
+            date_key = max(data.keys())
             return data[date_key]["stops"]
-        except (KeyError, StopIteration, TypeError) as err:
+        except (KeyError, ValueError, TypeError) as err:
             raise ZtmGdanskApiError(f"Unexpected stops.json structure: {err}") from err
 
     async def get_routes_for_stop(self, stop_id: int) -> list[str]:
@@ -54,8 +54,8 @@ class ZtmGdanskApiClient:
             self._get_json(URL_ROUTES),
         )
         try:
-            trips_key = next(iter(trips_data))
-            routes_key = next(iter(routes_data))
+            trips_key = max(trips_data.keys())
+            routes_key = max(routes_data.keys())
             stops_in_trip = trips_data[trips_key]["stopsInTrip"]
             routes = routes_data[routes_key]["routes"]
         except (KeyError, StopIteration, TypeError) as err:

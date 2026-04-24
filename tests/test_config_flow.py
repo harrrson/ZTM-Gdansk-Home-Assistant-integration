@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant import config_entries
+from homeassistant.data_entry_flow import InvalidData
 
 from custom_components.ztm_gdansk.const import (
     CONF_DEPARTURE_COUNT,
@@ -183,6 +184,29 @@ class TestConfigFlowErrors:
         assert result["type"] == "form"
         assert result["step_id"] == "user"
         assert "base" in result.get("errors", {})
+
+    async def test_scan_interval_below_minimum_rejected(self, hass):
+        """Spec: scan_interval must be >= MIN_SCAN_INTERVAL (20s).
+        HA framework validates the NumberSelector schema before calling the step handler —
+        values below MIN_SCAN_INTERVAL raise InvalidData and are never accepted."""
+        with _patch_api(), _patch_setup():
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": config_entries.SOURCE_USER}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_STOP_ID: str(STOP_ID)}
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_LINES_FILTER: []}
+            )
+            with pytest.raises(InvalidData):
+                await hass.config_entries.flow.async_configure(
+                    result["flow_id"],
+                    user_input={
+                        CONF_SCAN_INTERVAL: MIN_SCAN_INTERVAL - 1,
+                        CONF_DEPARTURE_COUNT: 5,
+                    },
+                )
 
 
 # ---------------------------------------------------------------------------

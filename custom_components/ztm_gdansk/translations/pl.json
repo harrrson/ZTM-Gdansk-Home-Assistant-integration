@@ -29,7 +29,8 @@
     },
     "error": {
       "cannot_connect": "Nie można połączyć się z API ZTM Gdańsk. Sprawdź połączenie z internetem.",
-      "invalid_stop": "Wybrany przystanek nie został znaleziony."
+      "invalid_stop": "Wybrany przystanek nie został znaleziony.",
+      "scan_interval_too_low": "Interwał odświeżania musi wynosić co najmniej {min} sekund."
     }
   },
   "options": {
@@ -45,7 +46,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Nie można połączyć się z API ZTM Gdańsk. Sprawdź połączenie z internetem."
+      "cannot_connect": "Nie można połączyć się z API ZTM Gdańsk. Sprawdź połączenie z internetem.",
+      "scan_interval_too_low": "Interwał odświeżania musi wynosić co najmniej {min} sekund."
     }
   }
 }

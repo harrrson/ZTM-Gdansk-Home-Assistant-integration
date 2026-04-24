@@ -29,7 +29,8 @@
     },
     "error": {
       "cannot_connect": "Cannot connect to ZTM Gdańsk API. Check your internet connection.",
-      "invalid_stop": "Selected stop not found."
+      "invalid_stop": "Selected stop not found.",
+      "scan_interval_too_low": "Update interval must be at least {min} seconds."
     }
   },
   "options": {
@@ -45,7 +46,8 @@
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to ZTM Gdańsk API. Check your internet connection."
+      "cannot_connect": "Cannot connect to ZTM Gdańsk API. Check your internet connection.",
+      "scan_interval_too_low": "Update interval must be at least {min} seconds."
     }
   }
 }

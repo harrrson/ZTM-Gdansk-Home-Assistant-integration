@@ -88,7 +88,7 @@ class TestGetStops:
         assert "stopDesc" in stop
 
     async def test_handles_multi_date_response(self):
-        """Spec: response keyed by date — use first key regardless of date string."""
+        """Spec: response keyed by date — use newest key (latest date string)."""
         multi_date = {
             "2026-04-23": {"stops": [{"stopId": 1, "stopName": "Old", "stopCode": "01", "stopDesc": ""}]},
             "2026-04-24": {"stops": [{"stopId": 2, "stopName": "New", "stopCode": "02", "stopDesc": ""}]},
@@ -96,7 +96,15 @@ class TestGetStops:
         client = ZtmGdanskApiClient(_session(_response(multi_date)))
         stops = await client.get_stops()
 
-        assert len(stops) == 1  # only the first key is consumed
+        assert len(stops) == 1
+        assert stops[0]["stopName"] == "New"  # newest key "2026-04-24" must win
+
+    async def test_calls_stops_url(self):
+        """Spec: get_stops() must request URL_STOPS (not a wrong endpoint)."""
+        from custom_components.ztm_gdansk.const import URL_STOPS
+        session = _session(_response(STOPS_RESPONSE))
+        await ZtmGdanskApiClient(session).get_stops()
+        assert session.get.call_args[0][0] == URL_STOPS
 
     async def test_raises_on_http_error(self):
         """Spec: HTTP errors → ZtmGdanskApiError."""
@@ -154,7 +162,7 @@ class TestGetRoutesForStop:
     async def test_deduplicates_routes(self):
         """Spec: duplicate routeIds (same line via multiple trips) count as one."""
         routes = await self._client().get_routes_for_stop(STOP_ID)
-        assert routes.count("130") == 1
+        assert len(routes) == len(set(routes))
 
     async def test_natural_sort_order(self):
         """Spec: lines sorted naturally — 2 < 10 < N1 < N10."""
@@ -221,3 +229,12 @@ class TestGetDepartures:
         client = ZtmGdanskApiClient(_session(_response(status=404, raise_exc=True)))
         with pytest.raises(ZtmGdanskApiError):
             await client.get_departures(STOP_ID)
+
+    async def test_sends_stop_id_param(self):
+        """Spec: get_departures(stop_id) must pass stopId to URL_DEPARTURES."""
+        from custom_components.ztm_gdansk.const import URL_DEPARTURES
+        session = _session(_response(DEPARTURES_RESPONSE))
+        await ZtmGdanskApiClient(session).get_departures(STOP_ID)
+        call = session.get.call_args
+        assert call[0][0] == URL_DEPARTURES
+        assert call[1]["params"]["stopId"] == STOP_ID

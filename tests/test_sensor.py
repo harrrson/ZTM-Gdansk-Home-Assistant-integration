@@ -72,6 +72,13 @@ class TestSensorIdentity:
         sensor = _make_sensor(_mock_coordinator([]), mock_config_entry)
         assert sensor.name == f"ZTM Gdańsk {STOP_NAME} {STOP_CODE}"
 
+    def test_entity_id_slug_matches_spec(self, mock_config_entry):
+        """Spec: entity_id = sensor.ztm_gdansk_{stop_name_slug}_{stop_code}.
+        HA derives entity_id from slugify(name), so the name must produce the expected slug."""
+        from homeassistant.util import slugify
+        sensor = _make_sensor(_mock_coordinator([]), mock_config_entry)
+        assert slugify(sensor.name) == f"ztm_gdansk_{slugify(STOP_NAME)}_{STOP_CODE}"
+
 
 # ---------------------------------------------------------------------------
 # State (native_value)
@@ -81,12 +88,19 @@ class TestSensorIdentity:
 class TestSensorState:
     def test_returns_minutes_to_next_departure(self, mock_config_entry):
         """Spec: state = integer minutes to next departure."""
-        departure = _future_departure(10)
-        sensor = _make_sensor(_mock_coordinator([departure]), mock_config_entry)
-
-        value = sensor.native_value
-        assert isinstance(value, int)
-        assert 9 <= value <= 10  # allow 1-minute rounding window
+        fixed_now = datetime(2026, 4, 24, 20, 0, 0, tzinfo=timezone.utc)
+        departure = {
+            "line": "130",
+            "headsign": "Dworzec Główny",
+            "estimated_time": fixed_now + timedelta(minutes=10),
+            "scheduled_time": fixed_now + timedelta(minutes=10),
+            "delay_minutes": 0,
+            "status": "REALTIME",
+            "vehicle_id": 9052,
+        }
+        with patch("custom_components.ztm_gdansk.sensor.ha_now", return_value=fixed_now):
+            sensor = _make_sensor(_mock_coordinator([departure]), mock_config_entry)
+            assert sensor.native_value == 10
 
     def test_returns_zero_when_departure_is_past(self, mock_config_entry):
         """Spec: state never goes negative — past departures show 0."""
