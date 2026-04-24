@@ -28,9 +28,10 @@ _CARD_URL = f"/{DOMAIN}/ztm-gdansk-card.js"
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    await hass.http.async_register_static_paths(
-        [StaticPathConfig(_CARD_URL, str(_WWW_DIR / "ztm-gdansk-card.js"), cache_headers=False)]
-    )
+    if hass.http is not None:
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(_CARD_URL, str(_WWW_DIR / "ztm-gdansk-card.js"), cache_headers=False)]
+        )
     return True
 
 
@@ -59,5 +60,5 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     return unloaded

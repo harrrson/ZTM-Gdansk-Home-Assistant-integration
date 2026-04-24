@@ -1,0 +1,223 @@
+"""
+Tests for api.py — black-box against spec requirements.
+
+Spec requirements covered:
+- get_stops() returns list of stop dicts from date-keyed JSON
+- get_routes_for_stop() filters by stopId, excludes passenger=False, natural sort, deduplicates
+- get_departures() returns raw departures list; empty list when no departures
+- All methods raise ZtmGdanskApiError on HTTP/timeout errors
+"""
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
+
+import aiohttp
+import pytest
+
+from custom_components.ztm_gdansk.api import ZtmGdanskApiClient, ZtmGdanskApiError
+
+from .conftest import (
+    DEPARTURES_RESPONSE,
+    ROUTES_RESPONSE,
+    STOPS_IN_TRIP_RESPONSE,
+    STOPS_RESPONSE,
+    STOP_CODE,
+    STOP_ID,
+    STOP_NAME,
+)
+
+
+# ---------------------------------------------------------------------------
+# Helpers — build a mock session without touching real aiohttp connectors
+# ---------------------------------------------------------------------------
+
+
+def _response(payload=None, status=200, raise_exc=None):
+    """Build an async-context-manager mock that returns a single response."""
+    resp = MagicMock()
+    if raise_exc:
+        resp.raise_for_status.side_effect = aiohttp.ClientResponseError(
+            request_info=MagicMock(), history=(), status=status
+        )
+    else:
+        resp.raise_for_status = MagicMock()
+        resp.json = AsyncMock(return_value=payload)
+
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=resp)
+    cm.__aexit__ = AsyncMock(return_value=False)
+    return cm
+
+
+def _timeout_response():
+    """Simulate a timeout at the context manager level."""
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(side_effect=asyncio.TimeoutError())
+    cm.__aexit__ = AsyncMock(return_value=False)
+    return cm
+
+
+def _session(*cms):
+    """Mock session whose .get() calls return the given context managers in order."""
+    session = MagicMock()
+    session.get.side_effect = list(cms)
+    return session
+
+
+# ---------------------------------------------------------------------------
+# get_stops()
+# ---------------------------------------------------------------------------
+
+
+class TestGetStops:
+    async def test_returns_stop_list(self):
+        """Spec: get_stops() returns list with stopId, stopName, stopCode, stopDesc."""
+        client = ZtmGdanskApiClient(_session(_response(STOPS_RESPONSE)))
+        stops = await client.get_stops()
+
+        assert isinstance(stops, list)
+        assert len(stops) == 2
+
+    async def test_stop_contains_required_fields(self):
+        """Spec: each stop has at minimum stopId, stopName, stopCode, stopDesc."""
+        client = ZtmGdanskApiClient(_session(_response(STOPS_RESPONSE)))
+        stops = await client.get_stops()
+
+        stop = next(s for s in stops if s["stopId"] == STOP_ID)
+        assert stop["stopName"] == STOP_NAME
+        assert stop["stopCode"] == STOP_CODE
+        assert "stopDesc" in stop
+
+    async def test_handles_multi_date_response(self):
+        """Spec: response keyed by date — use first key regardless of date string."""
+        multi_date = {
+            "2026-04-23": {"stops": [{"stopId": 1, "stopName": "Old", "stopCode": "01", "stopDesc": ""}]},
+            "2026-04-24": {"stops": [{"stopId": 2, "stopName": "New", "stopCode": "02", "stopDesc": ""}]},
+        }
+        client = ZtmGdanskApiClient(_session(_response(multi_date)))
+        stops = await client.get_stops()
+
+        assert len(stops) == 1  # only the first key is consumed
+
+    async def test_raises_on_http_error(self):
+        """Spec: HTTP errors → ZtmGdanskApiError."""
+        client = ZtmGdanskApiClient(_session(_response(status=500, raise_exc=True)))
+        with pytest.raises(ZtmGdanskApiError):
+            await client.get_stops()
+
+    async def test_raises_on_timeout(self):
+        """Spec: timeout → ZtmGdanskApiError."""
+        client = ZtmGdanskApiClient(_session(_timeout_response()))
+        with pytest.raises(ZtmGdanskApiError):
+            await client.get_stops()
+
+
+# ---------------------------------------------------------------------------
+# get_routes_for_stop()
+# ---------------------------------------------------------------------------
+
+
+class TestGetRoutesForStop:
+    def _client(self, trips=None, routes=None, error_on=None):
+        cms = [
+            _response(trips or STOPS_IN_TRIP_RESPONSE),
+            _response(routes or ROUTES_RESPONSE),
+        ]
+        if error_on == "trips":
+            cms[0] = _response(status=503, raise_exc=True)
+        elif error_on == "routes":
+            cms[1] = _response(status=503, raise_exc=True)
+        # gather() calls both at once; side_effect list must match call order
+        session = MagicMock()
+        session.get.side_effect = cms
+        return ZtmGdanskApiClient(session)
+
+    async def test_returns_only_routes_for_given_stop(self):
+        """Spec: only routes where stopId matches are returned."""
+        routes = await self._client().get_routes_for_stop(STOP_ID)
+        assert "200" not in routes  # routeId 200 → stop 2000
+
+    async def test_excludes_passenger_false(self):
+        """Spec: passenger=False records (depot trips) must be excluded."""
+        routes = await self._client().get_routes_for_stop(STOP_ID)
+        assert "999" not in routes
+
+    async def test_includes_passenger_true(self):
+        """Spec: passenger=True records are included."""
+        routes = await self._client().get_routes_for_stop(STOP_ID)
+        assert "130" in routes
+
+    async def test_includes_passenger_none(self):
+        """Spec: passenger=None records are included (not explicitly False)."""
+        routes = await self._client().get_routes_for_stop(STOP_ID)
+        assert "106" in routes
+
+    async def test_deduplicates_routes(self):
+        """Spec: duplicate routeIds (same line via multiple trips) count as one."""
+        routes = await self._client().get_routes_for_stop(STOP_ID)
+        assert routes.count("130") == 1
+
+    async def test_natural_sort_order(self):
+        """Spec: lines sorted naturally — 2 < 10 < N1 < N10."""
+        trips = {
+            "2026-04-24": {
+                "stopsInTrip": [
+                    {"routeId": rid, "stopId": STOP_ID, "passenger": True}
+                    for rid in [10, 2, 101, 201]
+                ]
+            }
+        }
+        routes = {
+            "2026-04-24": {
+                "routes": [
+                    {"routeId": 2, "routeShortName": "2"},
+                    {"routeId": 10, "routeShortName": "10"},
+                    {"routeId": 101, "routeShortName": "N1"},
+                    {"routeId": 201, "routeShortName": "N10"},
+                ]
+            }
+        }
+        result = await self._client(trips=trips, routes=routes).get_routes_for_stop(STOP_ID)
+        assert result == ["2", "10", "N1", "N10"]
+
+    async def test_raises_on_http_error(self):
+        """Spec: HTTP error on either static endpoint → ZtmGdanskApiError."""
+        with pytest.raises(ZtmGdanskApiError):
+            await self._client(error_on="trips").get_routes_for_stop(STOP_ID)
+
+
+# ---------------------------------------------------------------------------
+# get_departures()
+# ---------------------------------------------------------------------------
+
+
+class TestGetDepartures:
+    async def test_returns_departures_list(self):
+        """Spec: returns raw list from 'departures' key."""
+        client = ZtmGdanskApiClient(_session(_response(DEPARTURES_RESPONSE)))
+        departures = await client.get_departures(STOP_ID)
+
+        assert isinstance(departures, list)
+        assert len(departures) == 2
+
+    async def test_returns_empty_list_when_no_departures(self):
+        """Spec: empty departures (e.g. late night) → empty list, no error."""
+        client = ZtmGdanskApiClient(
+            _session(_response({"lastUpdate": "...", "departures": []}))
+        )
+        departures = await client.get_departures(STOP_ID)
+        assert departures == []
+
+    async def test_departure_contains_required_fields(self):
+        """Spec: each departure has routeShortName, headsign, estimatedTime, status."""
+        client = ZtmGdanskApiClient(_session(_response(DEPARTURES_RESPONSE)))
+        departures = await client.get_departures(STOP_ID)
+
+        d = departures[0]
+        for field in ("routeShortName", "headsign", "estimatedTime", "status"):
+            assert field in d, f"Missing field: {field}"
+
+    async def test_raises_on_http_error(self):
+        """Spec: HTTP error → ZtmGdanskApiError."""
+        client = ZtmGdanskApiClient(_session(_response(status=404, raise_exc=True)))
+        with pytest.raises(ZtmGdanskApiError):
+            await client.get_departures(STOP_ID)
