@@ -1,6 +1,8 @@
 """ZTM Gdańsk integration."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -19,6 +21,14 @@ from .const import (
 from .coordinator import ZtmGdanskCoordinator
 
 PLATFORMS = [Platform.SENSOR]
+
+_WWW_DIR = Path(__file__).parent / "www"
+_CARD_URL = f"/{DOMAIN}/ztm-gdansk-card.js"
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    hass.http.register_static_path(_CARD_URL, str(_WWW_DIR / "ztm-gdansk-card.js"))
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
