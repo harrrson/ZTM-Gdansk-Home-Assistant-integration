@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Wybierz przystanek",
+        "description": "Wybierz przystanek ZTM Gdańsk do monitorowania.",
+        "data": {
+          "stop_id": "Przystanek"
+        }
+      },
+      "lines": {
+        "title": "Filtruj linie",
+        "description": "Wybierz linie do wyświetlania. Pozostaw puste, aby pokazywać wszystkie linie.",
+        "data": {
+          "lines_filter": "Linie"
+        }
+      },
+      "options": {
+        "title": "Opcje",
+        "description": "Ustaw interwał odświeżania i liczbę odjazdów do wyświetlania.",
+        "data": {
+          "scan_interval": "Interwał odświeżania (sekundy)",
+          "departure_count": "Liczba odjazdów"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Ten przystanek jest już skonfigurowany."
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się z API ZTM Gdańsk. Sprawdź połączenie z internetem.",
+      "invalid_stop": "Wybrany przystanek nie został znaleziony."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje",
+        "description": "Zaktualizuj filtr linii i ustawienia odświeżania.",
+        "data": {
+          "lines_filter": "Linie",
+          "scan_interval": "Interwał odświeżania (sekundy)",
+          "departure_count": "Liczba odjazdów"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się z API ZTM Gdańsk. Sprawdź połączenie z internetem."
+    }
+  }
+}

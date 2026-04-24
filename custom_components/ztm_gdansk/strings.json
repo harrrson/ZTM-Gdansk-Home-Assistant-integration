@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select stop",
+        "description": "Choose a ZTM Gdańsk stop to monitor.",
+        "data": {
+          "stop_id": "Stop"
+        }
+      },
+      "lines": {
+        "title": "Filter lines",
+        "description": "Select lines to show. Leave empty to show all lines serving this stop.",
+        "data": {
+          "lines_filter": "Lines"
+        }
+      },
+      "options": {
+        "title": "Options",
+        "description": "Configure polling interval and number of departures to display.",
+        "data": {
+          "scan_interval": "Update interval (seconds)",
+          "departure_count": "Number of departures"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This stop is already configured."
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to ZTM Gdańsk API. Check your internet connection.",
+      "invalid_stop": "Selected stop not found."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "description": "Update line filter and polling settings.",
+        "data": {
+          "lines_filter": "Lines",
+          "scan_interval": "Update interval (seconds)",
+          "departure_count": "Number of departures"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to ZTM Gdańsk API. Check your internet connection."
+    }
+  }
+}
