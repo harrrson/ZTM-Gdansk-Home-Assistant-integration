@@ -1,0 +1,12 @@
+{
+  "domain": "ztm_gdansk",
+  "name": "ZTM Gdańsk",
+  "version": "0.1.0",
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "codeowners": [],
+  "documentation": "https://github.com/harrrson/ZTM-Gdansk-Home-Assistant-integration",
+  "issue_tracker": "https://github.com/harrrson/ZTM-Gdansk-Home-Assistant-integration/issues",
+  "homeassistant": "2024.1.0"
+}
