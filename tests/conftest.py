@@ -31,22 +31,21 @@ STOP_NAME = "Dworzec Główny"
 STOP_CODE = "07"
 
 STOPS_RESPONSE = {
-    "2026-04-24": {
-        "stops": [
-            {
-                "stopId": STOP_ID,
-                "stopName": STOP_NAME,
-                "stopCode": STOP_CODE,
-                "stopDesc": "Centrum",
-            },
-            {
-                "stopId": 2000,
-                "stopName": "Wrzeszcz",
-                "stopCode": "01",
-                "stopDesc": "PKP",
-            },
-        ]
-    }
+    "lastUpdate": "2026-04-24T20:53:00Z",
+    "stops": [
+        {
+            "stopId": STOP_ID,
+            "stopName": STOP_NAME,
+            "stopCode": STOP_CODE,
+            "stopDesc": "Centrum",
+        },
+        {
+            "stopId": 2000,
+            "stopName": "Wrzeszcz",
+            "stopCode": "01",
+            "stopDesc": "PKP",
+        },
+    ],
 }
 
 STOPS_IN_TRIP_RESPONSE = {
@@ -128,7 +127,7 @@ def mock_config_entry() -> MockConfigEntry:
 @pytest.fixture
 def mock_api_client():
     client = MagicMock()
-    client.get_stops = AsyncMock(return_value=STOPS_RESPONSE["2026-04-24"]["stops"])
+    client.get_stops = AsyncMock(return_value=STOPS_RESPONSE["stops"])
     client.get_routes_for_stop = AsyncMock(return_value=["106", "130"])
     client.get_departures = AsyncMock(
         return_value=DEPARTURES_RESPONSE["departures"]

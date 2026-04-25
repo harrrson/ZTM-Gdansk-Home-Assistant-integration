@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from datetime import date
 from typing import Any
 
 import aiohttp
@@ -40,9 +41,8 @@ class ZtmGdanskApiClient:
         """Return list of stops with stopId, stopName, stopCode, stopDesc."""
         data = await self._get_json(URL_STOPS)
         try:
-            date_key = max(data.keys())
-            return data[date_key]["stops"]
-        except (KeyError, ValueError, TypeError) as err:
+            return [s for s in data["stops"] if s.get("stopName")]
+        except (KeyError, TypeError) as err:
             raise ZtmGdanskApiError(f"Unexpected stops.json structure: {err}") from err
 
     async def get_routes_for_stop(self, stop_id: int) -> list[str]:
@@ -52,8 +52,8 @@ class ZtmGdanskApiClient:
             self._get_json(URL_ROUTES),
         )
         try:
-            trips_key = max(trips_data.keys())
-            routes_key = max(routes_data.keys())
+            trips_key = _current_date_key(trips_data)
+            routes_key = _current_date_key(routes_data)
             stops_in_trip = trips_data[trips_key]["stopsInTrip"]
             routes = routes_data[routes_key]["routes"]
         except (KeyError, StopIteration, TypeError) as err:
@@ -83,6 +83,14 @@ class ZtmGdanskApiClient:
             return data.get("departures", [])
         except AttributeError as err:
             raise ZtmGdanskApiError(f"Unexpected departures response: {err}") from err
+
+
+def _current_date_key(data: dict) -> str:
+    """Return the key matching today or the most recent past key available."""
+    today = date.today().isoformat()
+    available = sorted(data.keys())
+    past = [k for k in available if k <= today]
+    return past[-1] if past else available[0]
 
 
 def _natural_sort_key(s: str) -> tuple:

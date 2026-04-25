@@ -87,17 +87,20 @@ class TestGetStops:
         assert stop["stopCode"] == STOP_CODE
         assert "stopDesc" in stop
 
-    async def test_handles_multi_date_response(self):
-        """Spec: response keyed by date — use newest key (latest date string)."""
-        multi_date = {
-            "2026-04-23": {"stops": [{"stopId": 1, "stopName": "Old", "stopCode": "01", "stopDesc": ""}]},
-            "2026-04-24": {"stops": [{"stopId": 2, "stopName": "New", "stopCode": "02", "stopDesc": ""}]},
+    async def test_filters_out_stops_with_null_name(self):
+        """Spec: stops with stopName=None (UNKNOWN external stops) are excluded."""
+        response = {
+            "lastUpdate": "2026-04-24T20:00:00Z",
+            "stops": [
+                {"stopId": 1, "stopName": "Valid", "stopCode": "01", "stopDesc": ""},
+                {"stopId": 2, "stopName": None, "stopCode": None, "stopDesc": "Ghost"},
+            ],
         }
-        client = ZtmGdanskApiClient(_session(_response(multi_date)))
+        client = ZtmGdanskApiClient(_session(_response(response)))
         stops = await client.get_stops()
 
         assert len(stops) == 1
-        assert stops[0]["stopName"] == "New"  # newest key "2026-04-24" must win
+        assert stops[0]["stopName"] == "Valid"
 
     async def test_calls_stops_url(self):
         """Spec: get_stops() must request URL_STOPS (not a wrong endpoint)."""

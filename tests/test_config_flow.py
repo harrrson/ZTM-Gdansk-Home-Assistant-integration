@@ -33,7 +33,7 @@ from custom_components.ztm_gdansk.const import (
 from .conftest import STOP_CODE, STOP_ID, STOP_NAME, STOPS_RESPONSE
 
 
-MOCK_STOPS = STOPS_RESPONSE["2026-04-24"]["stops"]
+MOCK_STOPS = STOPS_RESPONSE["stops"]
 MOCK_LINES = ["106", "130"]
 
 
