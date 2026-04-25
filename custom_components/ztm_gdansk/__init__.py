@@ -6,6 +6,7 @@ from pathlib import Path
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -32,6 +33,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(_CARD_URL, str(_WWW_DIR / "ztm-gdansk-card.js"), cache_headers=False)]
         )
+    add_extra_js_url(hass, _CARD_URL)
     return True
 
 

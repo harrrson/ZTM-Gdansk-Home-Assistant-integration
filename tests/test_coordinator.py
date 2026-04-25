@@ -86,6 +86,7 @@ class TestOutputFormat:
         estimated = coordinator.data[0]["estimated_time"]
         assert estimated is not None
         assert estimated.tzinfo is not None
+        assert estimated.tzinfo != timezone.utc
 
     async def test_vehicle_id_none_when_null(self, coordinator, mock_api_client):
         """Spec: vehicleCode=None → vehicle_id=None."""

@@ -64,19 +64,24 @@ class ZtmGdanskConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._stops = []
 
         if user_input is not None and not errors:
-            stop_id = int(user_input[CONF_STOP_ID])
-            stop = next(
-                (s for s in self._stops if s["stopId"] == stop_id), None
-            )
-            if stop is None:
+            try:
+                stop_id = int(user_input[CONF_STOP_ID])
+            except (ValueError, TypeError):
                 errors[CONF_STOP_ID] = "invalid_stop"
-            else:
-                await self.async_set_unique_id(str(stop_id))
-                self._abort_if_unique_id_configured()
-                self._stop_id = stop_id
-                self._stop_name = stop["stopName"]
-                self._stop_code = stop.get("stopCode", "")
-                return await self.async_step_lines()
+                stop_id = None
+            if stop_id is not None:
+                stop = next(
+                    (s for s in self._stops if s["stopId"] == stop_id), None
+                )
+                if stop is None:
+                    errors[CONF_STOP_ID] = "invalid_stop"
+                else:
+                    await self.async_set_unique_id(str(stop_id))
+                    self._abort_if_unique_id_configured()
+                    self._stop_id = stop_id
+                    self._stop_name = stop["stopName"]
+                    self._stop_code = stop.get("stopCode", "")
+                    return await self.async_step_lines()
 
         options = [
             SelectOptionDict(
@@ -91,6 +96,7 @@ class ZtmGdanskConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     SelectSelectorConfig(
                         options=options,
                         mode=SelectSelectorMode.DROPDOWN,
+                        custom_value=True,
                     )
                 )
             }

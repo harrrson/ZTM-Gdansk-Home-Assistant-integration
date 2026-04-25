@@ -35,8 +35,6 @@ class ZtmGdanskApiClient:
             raise ZtmGdanskApiError(f"HTTP {err.status} fetching {url}") from err
         except aiohttp.ClientError as err:
             raise ZtmGdanskApiError(f"Client error fetching {url}: {err}") from err
-        except Exception as err:
-            raise ZtmGdanskApiError(f"Unexpected error fetching {url}: {err}") from err
 
     async def get_stops(self) -> list[dict]:
         """Return list of stops with stopId, stopName, stopCode, stopDesc."""

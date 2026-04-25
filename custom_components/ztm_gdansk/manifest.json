@@ -5,6 +5,7 @@
   "config_flow": true,
   "iot_class": "cloud_polling",
   "requirements": [],
+  "after_dependencies": ["frontend"],
   "codeowners": [],
   "documentation": "https://github.com/harrrson/ZTM-Gdansk-Home-Assistant-integration",
   "issue_tracker": "https://github.com/harrrson/ZTM-Gdansk-Home-Assistant-integration/issues",
