@@ -190,6 +190,35 @@ class TestGetRoutesForStop:
         result = await self._client(trips=trips, routes=routes).get_routes_for_stop(STOP_ID)
         assert result == ["2", "10", "N1", "N10"]
 
+    async def test_unions_routes_across_all_date_keys(self):
+        """Spec: weekday-only lines must appear even when queried on a weekend.
+        Implementation unions stopsInTrip across all date keys so no line is
+        silently dropped because it doesn't run today."""
+        trips = {
+            "2026-04-26": {  # Sunday — line 176 absent
+                "stopsInTrip": [
+                    {"routeId": 113, "stopId": STOP_ID, "passenger": True},
+                ]
+            },
+            "2026-04-28": {  # Monday — line 176 present
+                "stopsInTrip": [
+                    {"routeId": 113, "stopId": STOP_ID, "passenger": True},
+                    {"routeId": 176, "stopId": STOP_ID, "passenger": True},
+                ]
+            },
+        }
+        routes = {
+            "2026-04-26": {
+                "routes": [
+                    {"routeId": 113, "routeShortName": "113"},
+                    {"routeId": 176, "routeShortName": "176"},
+                ]
+            }
+        }
+        result = await self._client(trips=trips, routes=routes).get_routes_for_stop(STOP_ID)
+        assert "176" in result
+        assert "113" in result
+
     async def test_raises_on_http_error(self):
         """Spec: HTTP error on either static endpoint → ZtmGdanskApiError."""
         with pytest.raises(ZtmGdanskApiError):

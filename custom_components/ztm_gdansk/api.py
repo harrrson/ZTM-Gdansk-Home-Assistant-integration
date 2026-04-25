@@ -52,18 +52,18 @@ class ZtmGdanskApiClient:
             self._get_json(URL_ROUTES),
         )
         try:
-            trips_key = _current_date_key(trips_data)
             routes_key = _current_date_key(routes_data)
-            stops_in_trip = trips_data[trips_key]["stopsInTrip"]
             routes = routes_data[routes_key]["routes"]
+            # Union across all date keys so weekday-only lines aren't missed when
+            # queried on a weekend or public holiday.
+            route_id_set: set[int] = {
+                rec["routeId"]
+                for key in trips_data
+                for rec in trips_data[key]["stopsInTrip"]
+                if rec.get("stopId") == stop_id and rec.get("passenger") is not False
+            }
         except (KeyError, StopIteration, TypeError) as err:
             raise ZtmGdanskApiError(f"Unexpected static data structure: {err}") from err
-
-        route_id_set: set[int] = {
-            rec["routeId"]
-            for rec in stops_in_trip
-            if rec.get("stopId") == stop_id and rec.get("passenger") is not False
-        }
 
         route_id_to_name: dict[int, str] = {
             r["routeId"]: r["routeShortName"] for r in routes
