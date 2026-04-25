@@ -192,12 +192,13 @@ class TestGetRoutesForStop:
 
     async def test_unions_routes_across_all_date_keys(self):
         """Spec: weekday-only lines must appear even when queried on a weekend.
-        Implementation unions stopsInTrip across all date keys so no line is
-        silently dropped because it doesn't run today."""
+        Implementation unions stopsInTrip and routes across all date keys so no
+        line is silently dropped because it doesn't run today."""
         trips = {
             "2026-04-26": {  # Sunday — line 176 absent
                 "stopsInTrip": [
                     {"routeId": 113, "stopId": STOP_ID, "passenger": True},
+                    {"routeId": 213, "stopId": STOP_ID, "passenger": True},
                 ]
             },
             "2026-04-28": {  # Monday — line 176 present
@@ -212,6 +213,12 @@ class TestGetRoutesForStop:
                 "routes": [
                     {"routeId": 113, "routeShortName": "113"},
                     {"routeId": 176, "routeShortName": "176"},
+                ]
+            },
+            "2026-04-28": {
+                "routes": [
+                    {"routeId": 176, "routeShortName": "176"},
+                    {"routeId": 213, "routeShortName": "213"},
                 ]
             }
         }

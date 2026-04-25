@@ -52,10 +52,13 @@ class ZtmGdanskApiClient:
             self._get_json(URL_ROUTES),
         )
         try:
-            routes_key = _current_date_key(routes_data)
-            routes = routes_data[routes_key]["routes"]
             # Union across all date keys so weekday-only lines aren't missed when
             # queried on a weekend or public holiday.
+            route_id_to_name: dict[int, str] = {
+                rec["routeId"]: rec["routeShortName"]
+                for routes_key in routes_data
+                for rec in routes_data[routes_key]["routes"]
+            }
             route_id_set: set[int] = {
                 rec["routeId"]
                 for key in trips_data
@@ -64,10 +67,6 @@ class ZtmGdanskApiClient:
             }
         except (KeyError, StopIteration, TypeError) as err:
             raise ZtmGdanskApiError(f"Unexpected static data structure: {err}") from err
-
-        route_id_to_name: dict[int, str] = {
-            r["routeId"]: r["routeShortName"] for r in routes
-        }
 
         names = {
             route_id_to_name[rid]
@@ -83,14 +82,6 @@ class ZtmGdanskApiClient:
             return data.get("departures", [])
         except AttributeError as err:
             raise ZtmGdanskApiError(f"Unexpected departures response: {err}") from err
-
-
-def _current_date_key(data: dict) -> str:
-    """Return the key matching today or the most recent past key available."""
-    today = date.today().isoformat()
-    available = sorted(data.keys())
-    past = [k for k in available if k <= today]
-    return past[-1] if past else available[0]
 
 
 def _natural_sort_key(s: str) -> tuple:
